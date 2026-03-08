@@ -122,8 +122,7 @@ async function createPost() {
         msg.textContent='Post published successfully!';
         setTimeout(()=>window.location.href=` post.html?id=${post.id}`, 1500);
     } catch (error) {
-          msg.className = 'msg error';
-      msg.textContent = 'Could not connect to server.';
+         console.log(error);
     }
 }
 </script>
