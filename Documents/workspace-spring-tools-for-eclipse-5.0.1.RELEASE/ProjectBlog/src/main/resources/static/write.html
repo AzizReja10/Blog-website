@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Write — Writewell</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --ink: #1a1a2e;
+    --paper: #f5f0e8;
+    --accent: #c84b31;
+    --gold: #e8a838;
+    --muted: #7a7060;
+    --cream: #ede8dc;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--paper); font-family: 'DM Sans', sans-serif; min-height: 100vh; display: flex; flex-direction: column; }
+
+  nav {
+    background: var(--ink); padding: 0 2rem;
+    display: flex; align-items: center; justify-content: space-between; height: 64px;
+  }
+  .logo { font-family: 'Playfair Display', serif; font-size: 1.6rem; color: var(--paper); text-decoration: none; }
+  .logo span { color: var(--gold); font-style: italic; }
+  .nav-link { color: #aaa; text-decoration: none; font-size: 0.9rem; }
+  .nav-link:hover { color: white; }
+
+  .page { flex: 1; max-width: 750px; margin: 3rem auto; padding: 0 2rem; width: 100%; }
+  .page-title { font-family: 'Playfair Display', serif; font-size: 2.5rem; margin-bottom: 0.5rem; }
+  .page-subtitle { color: var(--muted); margin-bottom: 2.5rem; font-size: 0.95rem; }
+
+  .form-group { margin-bottom: 1.5rem; }
+  .form-group label {
+    display: block; font-size: 0.8rem; font-weight: 500;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    color: var(--muted); margin-bottom: 0.5rem;
+  }
+  .form-group input, .form-group textarea {
+    width: 100%; padding: 0.9rem 1rem;
+    border: 1.5px solid var(--cream); border-radius: 6px;
+    font-size: 0.95rem; font-family: 'DM Sans', sans-serif;
+    background: white; color: var(--ink); outline: none;
+    transition: border-color 0.2s;
+  }
+  .form-group input:focus, .form-group textarea:focus { border-color: var(--accent); }
+  .form-group textarea { height: 350px; resize: vertical; line-height: 1.7; }
+
+  .btn-submit {
+    padding: 0.9rem 2.5rem; background: var(--accent); color: white;
+    border: none; border-radius: 6px; font-size: 1rem; font-weight: 500;
+    font-family: 'DM Sans', sans-serif; cursor: pointer; transition: background 0.2s;
+  }
+  .btn-submit:hover { background: #a83828; }
+
+  .msg { padding: 0.75rem 1rem; border-radius: 6px; font-size: 0.85rem; margin-bottom: 1.5rem; display: none; }
+  .msg.success { background: #e8f5e9; color: #2e7d32; display: block; }
+  .msg.error { background: #fce8e6; color: #c62828; display: block; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="logo">Write<span>well</span></a>
+  <a href="index.html" class="nav-link">← Back to Home</a>
+</nav>
+
+<div class="page">
+  <div class="page-title">Write a Post</div>
+  <div class="page-subtitle">Share your story with the world</div>
+
+  <div class="msg" id="msg"></div>
+
+  <div class="form-group">
+    <label>Title</label>
+    <input type="text" id="title" placeholder="Your post title..."/>
+  </div>
+  <div class="form-group">
+    <label>Content</label>
+    <textarea id="content" placeholder="Write your story here..."></textarea>
+  </div>
+  <div class="form-group">
+    <label>Tags (comma separated)</label>
+    <input type="text" id="tags" placeholder="e.g. technology, life, programming"/>
+  </div>
+
+  <button class="btn-submit" onclick="createPost()">Publish Post</button>
+</div>
+<script>
+    const API='http://localhost:8080/api';
+    const user=localStorage.getItem('user');
+    if(!user)
+{
+    window.location.href='login.html';
+}
+async function createPost() {
+     const title = document.getElementById('title').value.trim();
+    const content = document.getElementById('content').value.trim();
+    const tagsRaw = document.getElementById('tags').value.trim();
+    const tags=tagsRaw?tagsRaw.split(',').map(t=>t.trim()).filter(Boolean):[];
+    const msg=document.getElementById('msg');
+    msg.className='msg';
+    if(!title||!content){
+        msg.className='msg errror';
+        msg.textContent='Title and content are required';
+        return;
+    }
+    try {
+        const res= await fetch(`${API}/posts`,{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({
+                title,
+                content,
+                tags,
+                author:user,
+                likes:0
+            })
+        });
+        const post=await res.json();
+        msg.className='msg success';
+        msg.textContent='Post published successfully!';
+        setTimeout(()=>window.location.href=` post.html?id=${post.id}`, 1500);
+    } catch (error) {
+          msg.className = 'msg error';
+      msg.textContent = 'Could not connect to server.';
+    }
+}
+</script>
+</body>
+</html>

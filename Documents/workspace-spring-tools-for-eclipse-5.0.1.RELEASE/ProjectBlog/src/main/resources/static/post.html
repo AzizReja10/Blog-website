@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Post — Writewell</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --ink: #1a1a2e;
+    --paper: #f5f0e8;
+    --accent: #c84b31;
+    --gold: #e8a838;
+    --muted: #7a7060;
+    --cream: #ede8dc;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--paper); font-family: 'DM Sans', sans-serif; min-height: 100vh; display: flex; flex-direction: column; }
+
+  nav {
+    background: var(--ink); padding: 0 2rem;
+    display: flex; align-items: center; justify-content: space-between; height: 64px;
+  }
+  .logo { font-family: 'Playfair Display', serif; font-size: 1.6rem; color: var(--paper); text-decoration: none; }
+  .logo span { color: var(--gold); font-style: italic; }
+  .nav-link { color: #aaa; text-decoration: none; font-size: 0.9rem; }
+  .nav-link:hover { color: white; }
+
+  .page { flex: 1; max-width: 750px; margin: 3rem auto; padding: 0 2rem; width: 100%; }
+
+  .post-tags { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+  .tag { background: var(--cream); color: var(--muted); padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.72rem; font-weight: 500; text-transform: uppercase; }
+  .post-title { font-family: 'Playfair Display', serif; font-size: 2.5rem; line-height: 1.2; margin-bottom: 1rem; }
+  .post-meta { display: flex; gap: 1.5rem; color: var(--muted); font-size: 0.85rem; margin-bottom: 2rem; padding-bottom: 2rem; border-bottom: 2px solid var(--cream); }
+  .post-meta span { display: flex; align-items: center; gap: 0.3rem; }
+  .post-content { line-height: 1.9; font-size: 1.05rem; color: #333; margin-bottom: 3rem; white-space: pre-wrap; }
+
+  .comments-section { border-top: 2px solid var(--cream); padding-top: 2rem; }
+  .comments-title { font-family: 'Playfair Display', serif; font-size: 1.5rem; margin-bottom: 1.5rem; }
+  .comment-item { padding: 1rem 0; border-bottom: 1px solid var(--cream); }
+  .comment-author { font-weight: 500; font-size: 0.85rem; margin-bottom: 0.3rem; color: var(--ink); }
+  .comment-text { color: var(--muted); font-size: 0.9rem; line-height: 1.6; }
+
+  .add-comment { margin-top: 2rem; }
+  .add-comment label { display: block; font-size: 0.8rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-bottom: 0.5rem; }
+  .comment-input-row { display: flex; gap: 0.75rem; }
+  .comment-input-row input {
+    flex: 1; padding: 0.75rem 1rem;
+    border: 1.5px solid var(--cream); border-radius: 6px;
+    font-family: 'DM Sans', sans-serif; font-size: 0.9rem;
+    background: white; outline: none; transition: border-color 0.2s;
+  }
+  .comment-input-row input:focus { border-color: var(--accent); }
+  .comment-input-row button {
+    padding: 0.75rem 1.5rem; background: var(--ink); color: white;
+    border: none; border-radius: 6px; cursor: pointer;
+    font-size: 0.9rem; font-family: 'DM Sans', sans-serif;
+    transition: background 0.2s;
+  }
+  .comment-input-row button:hover { background: var(--accent); }
+
+  .empty-comments { color: var(--muted); font-size: 0.9rem; padding: 1rem 0; }
+  .loading { text-align: center; padding: 3rem; color: var(--muted); }
+  .like-btn {
+    background: none; border: 1.5px solid var(--accent);
+    color: var(--accent); padding: 0.4rem 1rem;
+    border-radius: 20px; cursor: pointer; font-size: 0.85rem;
+    font-family: 'DM Sans', sans-serif; transition: all 0.2s;
+  }
+  .like-btn:hover { background: var(--accent); color: white; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="logo">Write<span>well</span></a>
+  <a href="index.html" class="nav-link">← Back to Home</a>
+</nav>
+
+<div class="page">
+  <div id="post-container" class="loading">Loading post...</div>
+</div>
+<script>
+    const API='/api';
+    const user=localStorage.getItem('user');
+    const params= new URLSearchParams(window.location.search);
+    const postId=params.get('id');
+    if(!postId){
+        window.location.href='index.html';
+    }
+    async function loadPost() {
+        try {
+            const res=await fetch(`${API}/posts/${postId}`);
+            const post=await res.json();
+            renderPost(post);
+            loadComments();
+        } catch (error) {
+          document.getElementById('post-container').innerHTML = '<p>Could not load post.</p>';
+    }
+    }
+     function renderPost(post) {
+    document.title = `${post.title} — Writewell`;
+    document.getElementById('post-container').innerHTML = `
+      <div class="post-tags">
+        ${(post.tags || []).map(t => `<span class="tag">${t}</span>`).join('')}
+      </div>
+      <div class="post-title">${post.title}</div>
+      <div class="post-meta">
+        <span>✦ ${post.author || 'Anonymous'}</span>
+        <span>♥ <span id="likes-count">${post.likes || 0}</span> likes</span>
+        <button class="like-btn" onclick="likePost('${post.id}', ${post.likes || 0})">♥ Like</button>
+      </div>
+      <div class="post-content">${post.content}</div>
+      <div class="comments-section">
+        <div class="comments-title">Comments</div>
+        <div id="comments-list"></div>
+        <div class="add-comment">
+          <label>Leave a comment</label>
+          <div class="comment-input-row">
+            <input type="text" id="comment-input" placeholder="${user ? 'Write a comment...' : 'Login to comment'}"/>
+            <button onclick="addComment()">Post</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+  async function loadComments() {
+    try {
+        const res= await fetch(`${API}/comments/${postId}`);
+        const comments=await res.json();
+        const container=document.getElementById('comments-list');
+        if(!comments.length){
+            container.innerHTML='<div class="empty-comments">No comments yet. Be the first!</div>';
+        return;
+        }
+        container.innerHTML=comments.map(c=>`   <div class="comment-item">
+          <div class="comment-author">✦ ${c.author}</div>
+          <div class="comment-text">${c.content}</div>
+        </div>
+      `).join('');
+    } catch {
+    }
+  }
+  async function addComment() {
+    if(!user){
+        window.location.href='login.html';
+        return;
+    }
+    const content=document.getElementById('comment-input').value.trim();
+    if(!content){
+        return;
+    }
+    try {
+        await fetch(`${API}/comments`,{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({postId,author:user,content})
+        });
+        document.getElementById('comment-input').value='';
+        loadComments()
+    } catch (error) {
+        alert('Failed to post comment.');
+    }
+}
+async function likePost(id, currentLikes) {
+    try {
+        // first fetch the full post
+        const res = await fetch(`${API}/posts/${id}`);
+        const post = await res.json();
+
+        // then update with all fields + new likes count
+        await fetch(`${API}/posts/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                title: post.title,
+                content: post.content,
+                author: post.author,
+                tags: post.tags,
+                likes: currentLikes + 1
+            })
+        });
+        document.getElementById('likes-count').textContent = currentLikes + 1;
+    } catch {
+        alert('Failed to like post.');
+    }
+}
+loadPost();
+</script> 
+</body>
+</html>
