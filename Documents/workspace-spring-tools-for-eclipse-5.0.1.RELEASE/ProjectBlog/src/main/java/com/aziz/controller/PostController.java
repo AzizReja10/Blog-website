@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @RequestMapping("/api/posts")
-@CrossOrigin(origins="*")
+@CrossOrigin(origins="https://blog-website-production-a99e.up.railway.app/")
 public class PostController {
 @Autowired
 PostRepository postRepo;
