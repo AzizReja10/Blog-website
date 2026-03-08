@@ -142,49 +142,61 @@
     }
   }
   async function addComment() {
-    if(!user){
-        window.location.href='login.html';
-        return;
-    }
-    const content=document.getElementById('comment-input').value.trim();
-    if(!content){
-        return;
-    }
-    try {
-        await fetch(`${API}/comments`,{
-            method:'POST',
-            headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({postId,author:user,content})
-        });
-        document.getElementById('comment-input').value='';
-        loadComments()
-    } catch (error) {
-        alert('Failed to post comment.');
-    }
-}
-async function likePost(id, currentLikes) {
-    try {
-        // first fetch the full post
-        const res = await fetch(`${API}/posts/${id}`);
-        const post = await res.json();
-
-        // then update with all fields + new likes count
-        await fetch(`${API}/posts/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                title: post.title,
-                content: post.content,
-                author: post.author,
-                tags: post.tags,
-                likes: currentLikes + 1
-            })
-        });
-        document.getElementById('likes-count').textContent = currentLikes + 1;
-    } catch {
-        alert('Failed to like post.');
-    }
-}
+      if (!user) {
+          window.location.href = 'login.html';
+          return;
+      }
+      const content = document.getElementById('comment-input').value.trim();
+      if (!content) return;
+      try {
+          const res = await fetch(`${API}/comments`, {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json',
+                  'X-Username': user  // ← send username
+              },
+              body: JSON.stringify({ postId, author: user, content })
+          });
+          const text = await res.text();
+          if (text.includes('401') || text.includes('403')) {
+              alert('Please login to comment!');
+              window.location.href = 'login.html';
+              return;
+          }
+          document.getElementById('comment-input').value = '';
+          loadComments();
+      } catch (error) {
+          alert('Failed to post comment.');
+      }
+  }
+  async function likePost(id, currentLikes) {
+      if (!user) {
+          alert('Please login to like posts!');
+          window.location.href = 'login.html';
+          return;
+      }
+      try {
+          const res = await fetch(`${API}/posts/${id}`);
+          const post = await res.json();
+          await fetch(`${API}/posts/${id}`, {
+              method: 'PUT',
+              headers: {
+                  'Content-Type': 'application/json',
+                  'X-Username': user  // ← send username
+              },
+              body: JSON.stringify({
+                  title: post.title,
+                  content: post.content,
+                  author: post.author,
+                  tags: post.tags,
+                  likes: currentLikes + 1
+              })
+          });
+          document.getElementById('likes-count').textContent = currentLikes + 1;
+      } catch {
+          alert('Failed to like post.');
+      }
+  }
 loadPost();
 </script> 
 </body>
